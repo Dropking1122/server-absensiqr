@@ -1,0 +1,61 @@
+root@localhost:/var/www/server-absen# composer install
+Do not run Composer as root/super user! See https://getcomposer.org/root for details
+Continue as root/super user [yes]? yes
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Your lock file does not contain a compatible set of packages. Please run composer update.
+
+  Problem 1
+    - symfony/clock is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/clock v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 2
+    - symfony/console is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/console v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 3
+    - symfony/css-selector is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/css-selector v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 4
+    - symfony/error-handler is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/error-handler v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 5
+    - symfony/event-dispatcher is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/event-dispatcher v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 6
+    - symfony/finder is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/finder v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 7
+    - symfony/http-foundation is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/http-foundation v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 8
+    - symfony/http-kernel is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/http-kernel v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 9
+    - symfony/mailer is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/mailer v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 10
+    - symfony/mime is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/mime v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 11
+    - symfony/process is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/process v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 12
+    - symfony/routing is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/routing v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 13
+    - symfony/string is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/string v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 14
+    - symfony/translation is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/translation v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 15
+    - symfony/uid is locked to version v8.1.0 and an update of this package was not requested.
+    - symfony/uid v8.1.0 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 16
+    - symfony/var-dumper is locked to version v8.1.1 and an update of this package was not requested.
+    - symfony/var-dumper v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+  Problem 17
+    - laravel/framework is locked to version v13.20.0 and an update of this package was not requested.
+    - laravel/framework v13.20.0 requires symfony/http-foundation ^7.4.0 || ^8.0.0 -> satisfiable by symfony/http-foundation[v8.1.1].
+    - symfony/http-foundation v8.1.1 requires php >=8.4.1 -> your php version (8.3.32) does not satisfy that requirement.
+
+root@localhost:/var/www/server-absen# 

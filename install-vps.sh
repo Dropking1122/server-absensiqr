@@ -242,19 +242,24 @@ step "6. Install Composer"
 if command -v composer &>/dev/null; then
     success "Composer sudah ada: $(composer --version --no-ansi 2>/dev/null | head -1)"
 else
+    # Coba via apt (pakai mirror lokal, timeout 90 detik)
     info "Menginstall Composer via apt..."
-    apt-get install -y composer
+    if timeout 90 apt-get install -y composer 2>/dev/null && command -v composer &>/dev/null; then
+        info "Composer dari apt terinstall, cek versi..."
+    else
+        # Fallback: download .phar dari GitHub Releases (bukan getcomposer.org)
+        warn "apt gagal atau timeout, download dari GitHub Releases..."
+        wget -q --timeout=60 \
+            -O /usr/local/bin/composer \
+            https://github.com/composer/composer/releases/latest/download/composer.phar
+        chmod +x /usr/local/bin/composer
+    fi
 
-    # Cek versi - Composer 2.x required. Jika apt beri versi lama, upgrade via self-update
+    # Pastikan versi 2.x
     COMPOSER_MAJOR=$(composer --version --no-ansi 2>/dev/null | grep -oP '\d+' | head -1)
     if [ "${COMPOSER_MAJOR:-0}" -lt 2 ]; then
-        info "Composer versi lama terdeteksi, upgrade ke Composer 2..."
-        composer self-update --2 2>/dev/null || {
-            warn "self-update gagal, mencoba download langsung..."
-            wget -q --timeout=60 -O /tmp/composer-setup.php https://getcomposer.org/installer
-            php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
-            rm -f /tmp/composer-setup.php
-        }
+        info "Upgrade Composer ke versi 2..."
+        composer self-update --2 --quiet 2>/dev/null || true
     fi
 
     success "Composer terinstall: $(composer --version --no-ansi 2>/dev/null | head -1)"
