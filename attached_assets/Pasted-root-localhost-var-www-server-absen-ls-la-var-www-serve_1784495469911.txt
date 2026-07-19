@@ -1,0 +1,33 @@
+root@localhost:/var/www/server-absen# ls -la /var/www/server-absen/storage/
+total 20
+drwxrwxr-x  5 www-data www-data 4096 Jul 20 04:16 .
+drwxr-xr-x 16 www-data www-data 4096 Jul 20 05:08 ..
+drwxrwxr-x  4 www-data www-data 4096 Jul 20 04:54 app
+drwxrwxr-x  6 www-data www-data 4096 Jul 20 04:54 framework
+drwxrwxr-x  2 www-data www-data 4096 Jul 20 04:55 logs
+root@localhost:/var/www/server-absen# mkdir -p /var/www/server-absen/storage/logs
+mkdir -p /var/www/server-absen/storage/framework/{cache,sessions,views}
+chown -R www-data:www-data /var/www/server-absen/storage
+chmod -R 775 /var/www/server-absen/storage
+root@localhost:/var/www/server-absen# cd /var/www/server-absen && php artisan about 2>&1 | head -20
+
+  Environment .......................................................................  
+  Application Name ........................................ Absensi QR - Server Pusat  
+  Laravel Version ........................................................... 13.20.0  
+  PHP Version ................................................................ 8.4.23  
+  Composer Version ........................................................... 2.10.2  
+  Environment ............................................................ production  
+  Debug Mode .................................................................... OFF  
+  URL ............................................................... server.revd.dev  
+  Maintenance Mode .............................................................. OFF  
+  Timezone ...................................................................... UTC  
+  Locale ......................................................................... id  
+
+  Cache .............................................................................  
+  Config ..................................................................... CACHED  
+  Events ..................................................................... CACHED  
+  Routes ..................................................................... CACHED  
+  Views ...................................................................... CACHED  
+
+  Drivers ...........................................................................  
+root@localhost:/var/www/server-absen# 
