@@ -30,7 +30,17 @@ step()    { echo -e "\n${CYAN}======== $1 ========${NC}"; }
 PHP_VERSION="8.4"
 DB_NAME="absensi_monitor"
 DB_USER="absensi_user"
-DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"
+
+# Direktori instalasi: auto-detect dulu agar bisa baca .env yang sudah ada
+SCRIPT_DIR_EARLY="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="${SCRIPT_DIR_EARLY}/.env"
+
+# Jika .env sudah ada, ambil DB_PASS dari sana agar tidak konflik
+if [ -f "$ENV_FILE" ]; then
+    DB_PASS="$(grep '^DB_PASSWORD=' "$ENV_FILE" | cut -d= -f2)"
+else
+    DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"
+fi
 
 # Direktori instalasi: auto-detect jika script ada di dalam folder project
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
