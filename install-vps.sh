@@ -225,11 +225,11 @@ systemctl start nginx
 step "5. Install Node.js 20"
 
 NODE_MAJOR=$(node --version 2>/dev/null | grep -oP '(?<=v)\d+' || echo "0")
-if [ "$NODE_MAJOR" -ge 20 ] 2>/dev/null; then
-    success "Node.js sudah ada: $(node --version)"
+if [ "${NODE_MAJOR}" -ge 18 ] 2>/dev/null; then
+    success "Node.js sudah ada: $(node --version) - dipakai langsung."
 else
     info "Menginstall Node.js 20 dari nodesource..."
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    curl -fsSL --max-time 30 https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y nodejs
     success "Node.js $(node --version) terinstall."
 fi
