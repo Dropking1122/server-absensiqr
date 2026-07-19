@@ -242,9 +242,21 @@ step "6. Install Composer"
 if command -v composer &>/dev/null; then
     success "Composer sudah ada: $(composer --version --no-ansi 2>/dev/null | head -1)"
 else
-    info "Menginstall Composer..."
-    curl -sSL --max-time 60 https://getcomposer.org/installer \
-        | php -- --install-dir=/usr/local/bin --filename=composer --quiet
+    info "Menginstall Composer via apt..."
+    apt-get install -y composer
+
+    # Cek versi - Composer 2.x required. Jika apt beri versi lama, upgrade via self-update
+    COMPOSER_MAJOR=$(composer --version --no-ansi 2>/dev/null | grep -oP '\d+' | head -1)
+    if [ "${COMPOSER_MAJOR:-0}" -lt 2 ]; then
+        info "Composer versi lama terdeteksi, upgrade ke Composer 2..."
+        composer self-update --2 2>/dev/null || {
+            warn "self-update gagal, mencoba download langsung..."
+            wget -q --timeout=60 -O /tmp/composer-setup.php https://getcomposer.org/installer
+            php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
+            rm -f /tmp/composer-setup.php
+        }
+    fi
+
     success "Composer terinstall: $(composer --version --no-ansi 2>/dev/null | head -1)"
 fi
 
