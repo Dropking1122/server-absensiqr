@@ -357,7 +357,8 @@ step "10. Install Dependensi & Build Assets"
 cd "$APP_DIR"
 
 info "Composer install (--no-dev)..."
-sudo -u www-data composer install \
+COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_HOME=/root/.composer \
+composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction \
@@ -366,11 +367,14 @@ sudo -u www-data composer install \
 success "Dependensi PHP selesai."
 
 info "npm install..."
-sudo -u www-data npm ci 2>&1 | tail -3
+npm ci 2>&1 | tail -3
 
 info "Build CSS/JS assets (Vite)..."
-sudo -u www-data npm run build 2>&1 | tail -5
+npm run build 2>&1 | tail -5
 success "Assets berhasil dibuild."
+
+# Fix permission setelah install sebagai root
+chown -R www-data:www-data "$APP_DIR/vendor" "$APP_DIR/node_modules" 2>/dev/null || true
 
 # =============================================================================
 # 11. Migrasi database & seeding
