@@ -384,12 +384,15 @@ else
     npm config set fetch-timeout 120000
     npm config set fetch-retries 2
 
-    timeout 300 npm ci 2>&1 | tail -5 || \
-    timeout 300 npm install 2>&1 | tail -5
+    # Hapus node_modules lama jika ada agar tidak konflik
+    rm -rf node_modules
+
+    # Pakai npm install (bukan npm ci) agar tidak tergantung versi lockfile
+    timeout 300 npm install --legacy-peer-deps 2>&1
     success "npm install selesai."
 
     info "Build CSS/JS assets (Vite)..."
-    timeout 120 npm run build 2>&1 | tail -5
+    timeout 120 npm run build 2>&1 | tail -10
     success "Assets berhasil dibuild."
 fi
 
