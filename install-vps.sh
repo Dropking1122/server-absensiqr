@@ -378,9 +378,14 @@ success "Dependensi PHP selesai."
 if [ -f "${APP_DIR}/public/build/manifest.json" ]; then
     success "Assets sudah ada (public/build/manifest.json), lewati npm install & build."
 else
-    info "npm install (registry: npmmirror)..."
-    # Pakai mirror yang lebih cepat dari npmjs.org
-    npm config set registry https://registry.npmmirror.com
+    # Bersihkan URL registry Replit dari package-lock.json jika ada
+    if grep -q "package-firewall.replit.local" package-lock.json 2>/dev/null; then
+        info "Memperbaiki package-lock.json (hapus URL internal Replit)..."
+        sed -i 's|http://package-firewall.replit.local/npm|https://registry.npmjs.org|g' package-lock.json
+        success "package-lock.json diperbaiki."
+    fi
+
+    info "npm install..."
     npm config set fetch-timeout 120000
     npm config set fetch-retries 2
 
