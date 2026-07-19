@@ -15,6 +15,14 @@ description: Konfigurasi penting untuk project Laravel 13 Server Pusat Absensi Q
 
 **How to apply:** Saat setup ulang atau deployment, pastikan DB_HOST=helium di kedua tempat.
 
+## TrustProxies — Wajib untuk Preview Replit
+- Tambahkan `$middleware->trustProxies(at: '*');` di `bootstrap/app.php` > `withMiddleware`
+- Tanpa ini, Laravel menggunakan scheme `http://` untuk asset URL padahal Replit proxy pakai HTTPS → browser blokir mixed content → preview blank putih
+
+**Why:** Replit proxy meneruskan `X-Forwarded-Proto: https` tapi Laravel mengabaikannya jika TrustProxies tidak dikonfigurasi.
+
+**How to apply:** Selalu tambahkan ini di setiap project Laravel baru di Replit sebelum testing preview.
+
 ## Alpine.js di Livewire 3
 - Jangan import Alpine di app.js — Livewire 3 sudah include Alpine secara internal
 - app.js hanya perlu: `import './bootstrap';`
