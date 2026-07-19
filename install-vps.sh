@@ -24,16 +24,13 @@ warn()    { echo -e "${YELLOW}[WARN]${NC}    $1"; }
 step()    { echo -e "\n${CYAN}======== $1 ========${NC}"; }
 
 # =============================================================================
-# KONFIGURASI - Edit bagian ini sebelum menjalankan script
+# KONFIGURASI - Diisi via input interaktif saat script dijalankan
 # =============================================================================
 
-APP_DOMAIN="absensi.contoh.com"        # Domain atau IP VPS Anda
-DB_NAME="absensi_monitor"              # Nama database PostgreSQL
-DB_USER="absensi_user"                 # Username database PostgreSQL
-DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"  # Auto-generated
-DEV_EMAIL="developer@yourdomain.com"   # Email login dashboard
-DEV_PASS="rahasia123"                  # Password login (GANTI yang kuat!)
-PHP_VERSION="8.3"                      # Versi PHP
+PHP_VERSION="8.3"
+DB_NAME="absensi_monitor"
+DB_USER="absensi_user"
+DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"
 
 # Direktori instalasi: auto-detect jika script ada di dalam folder project
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -52,12 +49,48 @@ echo "============================================================"
 echo "   Absensi QR - Server Pusat - Script Instalasi VPS"
 echo "============================================================"
 echo ""
+echo "  Jawab pertanyaan berikut untuk mengkonfigurasi instalasi."
+echo "  Tekan Enter untuk memakai nilai default (ditampilkan dalam [kurung])."
+echo ""
+
+# --- Input domain ---
+read -rp "  Domain atau IP VPS Anda [absensi.contoh.com]: " INPUT_DOMAIN
+APP_DOMAIN="${INPUT_DOMAIN:-absensi.contoh.com}"
+
+# --- Input email developer ---
+read -rp "  Email akun developer [developer@yourdomain.com]: " INPUT_EMAIL
+DEV_EMAIL="${INPUT_EMAIL:-developer@yourdomain.com}"
+
+# --- Input password developer ---
+while true; do
+    read -rsp "  Password akun developer (min. 8 karakter): " INPUT_PASS
+    echo ""
+    if [ ${#INPUT_PASS} -ge 8 ]; then
+        read -rsp "  Ulangi password: " INPUT_PASS2
+        echo ""
+        if [ "$INPUT_PASS" = "$INPUT_PASS2" ]; then
+            DEV_PASS="$INPUT_PASS"
+            break
+        else
+            warn "Password tidak cocok, coba lagi."
+        fi
+    else
+        warn "Password minimal 8 karakter."
+    fi
+done
+
+echo ""
+echo "  --------------------------------------------------------"
 echo "  Direktori app : $APP_DIR"
 echo "  Domain        : $APP_DOMAIN"
+echo "  Email         : $DEV_EMAIL"
+echo "  Password      : (tersembunyi)"
+echo "  PHP versi     : $PHP_VERSION"
+echo "  --------------------------------------------------------"
 echo ""
-warn "Script akan menginstall: PHP ${PHP_VERSION}, PostgreSQL, Nginx, Node.js 20, Composer, Supervisor"
+warn "Script akan menginstall: PHP ${PHP_VERSION}, PostgreSQL, Nginx, Node.js 20, Composer, Supervisor, tmux"
 echo ""
-read -rp "Lanjutkan? (y/N): " CONFIRM
+read -rp "Lanjutkan instalasi? (y/N): " CONFIRM
 [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Dibatalkan."; exit 0; }
 
 # =============================================================================
