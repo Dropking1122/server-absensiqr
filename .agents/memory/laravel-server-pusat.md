@@ -15,6 +15,15 @@ description: Konfigurasi penting untuk project Laravel 13 Server Pusat Absensi Q
 
 **How to apply:** Saat setup ulang atau deployment, pastikan DB_HOST=helium di kedua tempat.
 
+## Route `logout` Wajib Didefinisikan Manual
+- Breeze Livewire stack **tidak** otomatis menambahkan POST `/logout` → harus didefinisikan manual di `routes/auth.php`
+- Tanpa route ini: layout yang pakai `route('logout')` melempar exception → Laravel error renderer menginject `const markdown = ...` → Livewire page swap ke-2 menyebabkan `SyntaxError: Identifier 'markdown' has already been declared`
+- Fix: tambahkan di `routes/auth.php` dalam grup `auth`: `Route::post('logout', fn(Request $r) => [logout, invalidate, regenerate, redirect('/')] )->name('logout');`
+
+**Why:** Error JS `markdown` hanyalah simptom — penyebab asli adalah PHP exception yang memicu error renderer Laravel (yang memiliki `const markdown` di dalamnya).
+
+**How to apply:** Setiap project Laravel baru dengan Breeze Livewire, periksa apakah route `logout` ada. Jalankan `php artisan route:list --name=logout` untuk verifikasi.
+
 ## TrustProxies — Wajib untuk Preview Replit
 - Tambahkan `$middleware->trustProxies(at: '*');` di `bootstrap/app.php` > `withMiddleware`
 - Tanpa ini, Laravel menggunakan scheme `http://` untuk asset URL padahal Replit proxy pakai HTTPS → browser blokir mixed content → preview blank putih
