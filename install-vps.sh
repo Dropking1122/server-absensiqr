@@ -243,15 +243,8 @@ if command -v composer &>/dev/null; then
     success "Composer sudah ada: $(composer --version --no-ansi 2>/dev/null | head -1)"
 else
     info "Menginstall Composer..."
-    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
-    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
-    if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
-        rm composer-setup.php
-        echo -e "${RED}[ERROR]${NC} Checksum Composer tidak valid." && exit 1
-    fi
-    php composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
-    rm composer-setup.php
+    curl -sSL --max-time 60 https://getcomposer.org/installer \
+        | php -- --install-dir=/usr/local/bin --filename=composer --quiet
     success "Composer terinstall: $(composer --version --no-ansi 2>/dev/null | head -1)"
 fi
 
