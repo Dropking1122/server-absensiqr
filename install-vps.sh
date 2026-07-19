@@ -1,175 +1,284 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Script Instalasi Otomatis: Absensi QR - Server Pusat
-# Target: Ubuntu 22.04 / 24.04 LTS
+# Support: Ubuntu 20.04/22.04/24.04 dan Debian 11/12
 # Jalankan sebagai root: sudo bash install-vps.sh
 # =============================================================================
 
-set -e
+set -euo pipefail
+
+# Trap error - tampilkan baris yang gagal
+trap 'echo -e "\n\033[0;31m[ERROR]\033[0m Script gagal di baris $LINENO. Periksa output di atas." >&2' ERR
 
 # --- Warna output ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
-success() { echo -e "${GREEN}[OK]${NC} $1"; }
-warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
-error()   { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+info()    { echo -e "${BLUE}[INFO]${NC}    $1"; }
+success() { echo -e "${GREEN}[OK]${NC}      $1"; }
+warn()    { echo -e "${YELLOW}[WARN]${NC}    $1"; }
+step()    { echo -e "\n${CYAN}======== $1 ========${NC}"; }
 
 # =============================================================================
 # KONFIGURASI - Edit bagian ini sebelum menjalankan script
 # =============================================================================
 
 APP_DOMAIN="absensi.contoh.com"        # Domain atau IP VPS Anda
-APP_DIR="/var/www/server-pusat"        # Lokasi instalasi
 DB_NAME="absensi_monitor"              # Nama database PostgreSQL
 DB_USER="absensi_user"                 # Username database PostgreSQL
-DB_PASS="$(openssl rand -base64 24)"   # Password database (auto-generated)
-DEV_EMAIL="developer@yourdomain.com"   # Email akun developer
-DEV_PASS="rahasia123"                  # Password akun developer (ganti ini!)
+DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"  # Auto-generated
+DEV_EMAIL="developer@yourdomain.com"   # Email login dashboard
+DEV_PASS="rahasia123"                  # Password login (GANTI yang kuat!)
 PHP_VERSION="8.3"                      # Versi PHP
+
+# Direktori instalasi: auto-detect jika script ada di dalam folder project
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/artisan" ]; then
+    APP_DIR="$SCRIPT_DIR"
+    COPY_FILES=false
+else
+    APP_DIR="/var/www/server-pusat"
+    COPY_FILES=true
+fi
 
 # =============================================================================
 
 echo ""
 echo "============================================================"
-echo "  Absensi QR - Server Pusat - Script Instalasi VPS"
+echo "   Absensi QR - Server Pusat - Script Instalasi VPS"
 echo "============================================================"
 echo ""
-warn "Script ini akan menginstall:"
-echo "  - PHP ${PHP_VERSION}-FPM + ekstensi"
-echo "  - PostgreSQL 16"
-echo "  - Nginx"
-echo "  - Node.js 20 + npm"
-echo "  - Composer"
-echo "  - Supervisor (untuk queue worker)"
+echo "  Direktori app : $APP_DIR"
+echo "  Domain        : $APP_DOMAIN"
 echo ""
-read -p "Lanjutkan? (y/N): " CONFIRM
+warn "Script akan menginstall: PHP ${PHP_VERSION}, PostgreSQL, Nginx, Node.js 20, Composer, Supervisor"
+echo ""
+read -rp "Lanjutkan? (y/N): " CONFIRM
 [[ "$CONFIRM" =~ ^[Yy]$ ]] || { echo "Dibatalkan."; exit 0; }
 
 # =============================================================================
-# 1. Update sistem
+# 0. Deteksi OS
 # =============================================================================
-info "Memperbarui paket sistem..."
+step "0. Deteksi Sistem Operasi"
+
+if [ ! -f /etc/os-release ]; then
+    echo -e "${RED}[ERROR]${NC} Tidak bisa mendeteksi OS. Script ini butuh Ubuntu atau Debian." && exit 1
+fi
+source /etc/os-release
+OS_ID="${ID}"           # ubuntu / debian
+OS_CODENAME="${VERSION_CODENAME:-}"  # jammy / bookworm / bullseye / focal
+
+info "OS terdeteksi: ${PRETTY_NAME}"
+
+case "$OS_ID" in
+    ubuntu) ;;
+    debian) ;;
+    *) echo -e "${RED}[ERROR]${NC} OS '${OS_ID}' tidak didukung. Gunakan Ubuntu atau Debian." && exit 1 ;;
+esac
+
+# =============================================================================
+# 1. Update sistem & paket dasar
+# =============================================================================
+step "1. Update Sistem"
+
+export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
-apt-get upgrade -y -qq
-apt-get install -y -qq curl wget git unzip software-properties-common apt-transport-https ca-certificates lsb-release gnupg2
-success "Sistem diperbarui."
+apt-get install -y -qq \
+    curl wget git unzip gnupg2 \
+    apt-transport-https ca-certificates lsb-release \
+    software-properties-common
+success "Paket dasar terinstall."
 
 # =============================================================================
 # 2. Install PHP
 # =============================================================================
-info "Menginstall PHP ${PHP_VERSION}..."
-add-apt-repository -y ppa:ondrej/php > /dev/null 2>&1
-apt-get update -qq
-apt-get install -y -qq \
-    php${PHP_VERSION}-fpm \
-    php${PHP_VERSION}-cli \
-    php${PHP_VERSION}-pgsql \
-    php${PHP_VERSION}-mbstring \
-    php${PHP_VERSION}-xml \
-    php${PHP_VERSION}-bcmath \
-    php${PHP_VERSION}-curl \
-    php${PHP_VERSION}-zip \
-    php${PHP_VERSION}-intl \
-    php${PHP_VERSION}-gd \
-    php${PHP_VERSION}-tokenizer \
-    php${PHP_VERSION}-dom \
-    php${PHP_VERSION}-fileinfo
-success "PHP ${PHP_VERSION} terinstall."
+step "2. Install PHP ${PHP_VERSION}"
+
+if php${PHP_VERSION} --version &>/dev/null 2>&1; then
+    success "PHP ${PHP_VERSION} sudah terinstall, dilewati."
+else
+    info "Menambahkan repository PHP Ondrej Sury..."
+
+    if [ "$OS_ID" = "ubuntu" ]; then
+        # Ubuntu: pakai PPA
+        add-apt-repository -y "ppa:ondrej/php"
+    else
+        # Debian: pakai packages.sury.org
+        curl -sSL https://packages.sury.org/php/apt.gpg \
+            | gpg --dearmor \
+            | tee /usr/share/keyrings/sury-php.gpg > /dev/null
+        echo "deb [signed-by=/usr/share/keyrings/sury-php.gpg] https://packages.sury.org/php/ ${OS_CODENAME} main" \
+            > /etc/apt/sources.list.d/sury-php.list
+    fi
+
+    apt-get update -qq
+    info "Menginstall PHP ${PHP_VERSION} dan ekstensi..."
+    apt-get install -y \
+        php${PHP_VERSION}-fpm \
+        php${PHP_VERSION}-cli \
+        php${PHP_VERSION}-pgsql \
+        php${PHP_VERSION}-mbstring \
+        php${PHP_VERSION}-xml \
+        php${PHP_VERSION}-bcmath \
+        php${PHP_VERSION}-curl \
+        php${PHP_VERSION}-zip \
+        php${PHP_VERSION}-intl \
+        php${PHP_VERSION}-gd \
+        php${PHP_VERSION}-tokenizer \
+        php${PHP_VERSION}-dom \
+        php${PHP_VERSION}-fileinfo
+    success "PHP ${PHP_VERSION} terinstall: $(php${PHP_VERSION} --version | head -1)"
+fi
+
+# Pastikan php default menunjuk ke versi yang benar
+update-alternatives --set php /usr/bin/php${PHP_VERSION} 2>/dev/null || true
+systemctl enable php${PHP_VERSION}-fpm
+systemctl start php${PHP_VERSION}-fpm
 
 # =============================================================================
 # 3. Install PostgreSQL
 # =============================================================================
-info "Menginstall PostgreSQL..."
-apt-get install -y -qq postgresql postgresql-contrib
-systemctl start postgresql
-systemctl enable postgresql
+step "3. Install PostgreSQL"
 
-# Buat database dan user
-info "Membuat database PostgreSQL..."
-sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASS}';" 2>/dev/null || \
-    sudo -u postgres psql -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASS}';"
-sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};" 2>/dev/null || \
-    warn "Database sudah ada, dilanjutkan."
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
+if command -v psql &>/dev/null; then
+    success "PostgreSQL sudah ada: $(psql --version | head -1)"
+else
+    info "Menginstall PostgreSQL..."
+    apt-get install -y postgresql postgresql-contrib
+    success "PostgreSQL terinstall."
+fi
+
+systemctl enable postgresql
+systemctl start postgresql
+
+info "Membuat database dan user PostgreSQL..."
+# Jalankan perintah SQL, abaikan error "already exists"
+sudo -u postgres psql -v ON_ERROR_STOP=0 <<SQL 2>/dev/null
+DO \$\$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
+        CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASS}';
+    ELSE
+        ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASS}';
+    END IF;
+END
+\$\$;
+CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+SQL
 success "Database '${DB_NAME}' siap."
 
 # =============================================================================
 # 4. Install Nginx
 # =============================================================================
-info "Menginstall Nginx..."
-apt-get install -y -qq nginx
-systemctl start nginx
+step "4. Install Nginx"
+
+if command -v nginx &>/dev/null; then
+    success "Nginx sudah ada: $(nginx -v 2>&1)"
+else
+    apt-get install -y nginx
+    success "Nginx terinstall."
+fi
 systemctl enable nginx
-success "Nginx terinstall."
+systemctl start nginx
 
 # =============================================================================
 # 5. Install Node.js 20
 # =============================================================================
-info "Menginstall Node.js 20..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash - > /dev/null 2>&1
-apt-get install -y -qq nodejs
-success "Node.js $(node -v) terinstall."
+step "5. Install Node.js 20"
+
+NODE_MAJOR=$(node --version 2>/dev/null | grep -oP '(?<=v)\d+' || echo "0")
+if [ "$NODE_MAJOR" -ge 20 ] 2>/dev/null; then
+    success "Node.js sudah ada: $(node --version)"
+else
+    info "Menginstall Node.js 20 dari nodesource..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    apt-get install -y nodejs
+    success "Node.js $(node --version) terinstall."
+fi
 
 # =============================================================================
 # 6. Install Composer
 # =============================================================================
-info "Menginstall Composer..."
-if ! command -v composer &> /dev/null; then
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer > /dev/null
-    success "Composer terinstall."
-else
+step "6. Install Composer"
+
+if command -v composer &>/dev/null; then
     success "Composer sudah ada: $(composer --version --no-ansi 2>/dev/null | head -1)"
+else
+    info "Menginstall Composer..."
+    EXPECTED_CHECKSUM="$(php -r 'copy("https://composer.github.io/installer.sig", "php://stdout");')"
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
+    if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]; then
+        rm composer-setup.php
+        echo -e "${RED}[ERROR]${NC} Checksum Composer tidak valid." && exit 1
+    fi
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
+    rm composer-setup.php
+    success "Composer terinstall: $(composer --version --no-ansi 2>/dev/null | head -1)"
 fi
 
 # =============================================================================
 # 7. Install Supervisor
 # =============================================================================
-info "Menginstall Supervisor..."
-apt-get install -y -qq supervisor
-systemctl start supervisor
-systemctl enable supervisor
-success "Supervisor terinstall."
+step "7. Install Supervisor"
 
-# =============================================================================
-# 8. Clone / Salin kode aplikasi
-# =============================================================================
-info "Menyiapkan direktori aplikasi..."
-mkdir -p "$APP_DIR"
-
-# Jika dijalankan dari dalam direktori project, salin dari sana
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [ -f "${SCRIPT_DIR}/artisan" ]; then
-    info "Menyalin file dari direktori script..."
-    rsync -a --exclude='.git' --exclude='node_modules' --exclude='vendor' \
-          --exclude='.env' --exclude='storage/logs/*' --exclude='storage/framework/cache/*' \
-          "${SCRIPT_DIR}/" "${APP_DIR}/"
+if command -v supervisorctl &>/dev/null; then
+    success "Supervisor sudah ada."
 else
-    warn "File aplikasi tidak ditemukan di direktori script."
-    warn "Salin file project Anda secara manual ke: ${APP_DIR}"
-    warn "Lalu jalankan bagian konfigurasi di bawah secara terpisah."
+    apt-get install -y supervisor
+    success "Supervisor terinstall."
+fi
+systemctl enable supervisor
+systemctl start supervisor
+
+# =============================================================================
+# 8. Siapkan direktori & file aplikasi
+# =============================================================================
+step "8. Siapkan File Aplikasi"
+
+if [ "$COPY_FILES" = true ]; then
+    info "Membuat direktori ${APP_DIR}..."
+    mkdir -p "$APP_DIR"
+    warn "File project belum ada di ${APP_DIR}."
+    warn "Salin semua file project ke ${APP_DIR} lalu jalankan lagi script ini."
+    warn "Atau: git clone <repo-url> ${APP_DIR}"
+    echo ""
+    echo "Setelah menyalin file, jalankan:"
+    echo "  bash ${SCRIPT_DIR}/install-vps.sh"
+    exit 0
 fi
 
+info "File aplikasi ditemukan di ${APP_DIR}."
+
+# Set permissions
 chown -R www-data:www-data "$APP_DIR"
 chmod -R 755 "$APP_DIR"
 chmod -R 775 "${APP_DIR}/storage" "${APP_DIR}/bootstrap/cache"
+# Beri akses baca untuk script ini sendiri (dijalankan sebagai root)
+success "Permission direktori diset."
 
 # =============================================================================
 # 9. Konfigurasi .env
 # =============================================================================
-info "Membuat file konfigurasi .env..."
-APP_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+step "9. Konfigurasi .env"
 
-cat > "${APP_DIR}/.env" <<EOF
+if [ -f "${APP_DIR}/.env" ]; then
+    warn ".env sudah ada, dilewati (tidak ditimpa)."
+    warn "Pastikan isinya sudah benar, terutama DB_PASSWORD dan APP_KEY."
+else
+    info "Membuat .env dari template..."
+    APP_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+    cat > "${APP_DIR}/.env" <<EOF
 APP_NAME="Absensi QR - Server Pusat"
 APP_ENV=production
 APP_KEY=${APP_KEY}
 APP_DEBUG=false
-APP_URL=https://${APP_DOMAIN}
+APP_URL=http://${APP_DOMAIN}
 APP_LOCALE=id
 APP_TIMEZONE=Asia/Jakarta
 
@@ -194,39 +303,52 @@ CURRENT_STABLE_VERSION=1.0.0
 HEARTBEAT_LOG_RETENTION_DAYS=90
 ONLINE_THRESHOLD_MINUTES=90
 EOF
-
-success "File .env dibuat."
+    success ".env dibuat."
+fi
 
 # =============================================================================
 # 10. Install dependensi PHP & Node.js
 # =============================================================================
-info "Menginstall dependensi PHP (Composer)..."
-cd "$APP_DIR"
-sudo -u www-data composer install --no-dev --optimize-autoloader --no-interaction -q
-success "Dependensi PHP terinstall."
+step "10. Install Dependensi & Build Assets"
 
-info "Menginstall dependensi Node.js & build assets..."
-sudo -u www-data npm ci --silent
-sudo -u www-data npm run build
+cd "$APP_DIR"
+
+info "Composer install (--no-dev)..."
+sudo -u www-data composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist \
+    2>&1 | tail -5
+success "Dependensi PHP selesai."
+
+info "npm install..."
+sudo -u www-data npm ci 2>&1 | tail -3
+
+info "Build CSS/JS assets (Vite)..."
+sudo -u www-data npm run build 2>&1 | tail -5
 success "Assets berhasil dibuild."
 
 # =============================================================================
 # 11. Migrasi database & seeding
 # =============================================================================
-info "Menjalankan migrasi database..."
+step "11. Migrasi Database"
+
 cd "$APP_DIR"
-php artisan config:cache
+info "Menjalankan migrasi..."
+php artisan config:clear
 php artisan migrate --force
 success "Migrasi selesai."
 
-info "Menjalankan seeder (akun developer + data awal)..."
+info "Menjalankan seeder (akun developer + rilis awal)..."
 php artisan db:seed --force
 success "Seeder selesai."
 
 # =============================================================================
-# 12. Optimasi Laravel untuk production
+# 12. Optimasi Laravel
 # =============================================================================
-info "Mengoptimasi Laravel untuk production..."
+step "12. Optimasi Laravel (Production)"
+
 cd "$APP_DIR"
 php artisan config:cache
 php artisan route:cache
@@ -237,8 +359,10 @@ success "Optimasi selesai."
 # =============================================================================
 # 13. Konfigurasi Nginx
 # =============================================================================
-info "Mengkonfigurasi Nginx..."
-cat > "/etc/nginx/sites-available/server-pusat" <<NGINX
+step "13. Konfigurasi Nginx"
+
+NGINX_CONF="/etc/nginx/sites-available/server-pusat"
+cat > "$NGINX_CONF" <<NGINX
 server {
     listen 80;
     server_name ${APP_DOMAIN};
@@ -246,6 +370,7 @@ server {
 
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
+    add_header X-Robots-Tag "noindex, nofollow";
 
     index index.php;
     charset utf-8;
@@ -264,28 +389,31 @@ server {
         fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
         include fastcgi_params;
         fastcgi_hide_header X-Powered-By;
+        fastcgi_read_timeout 60;
     }
 
-    location ~ /\.(?!well-known).* {
-        deny all;
-    }
+    location ~ /\.(?!well-known).* { deny all; }
 
-    # Gzip compression
     gzip on;
+    gzip_vary on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
-    gzip_min_length 1000;
+    gzip_min_length 1024;
 }
 NGINX
 
-ln -sf /etc/nginx/sites-available/server-pusat /etc/nginx/sites-enabled/server-pusat
+ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/server-pusat
 rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+
+info "Mengecek konfigurasi Nginx..."
+nginx -t
+systemctl reload nginx
 success "Nginx dikonfigurasi."
 
 # =============================================================================
-# 14. Konfigurasi Supervisor untuk Queue Worker
+# 14. Supervisor - Queue Worker
 # =============================================================================
-info "Mengkonfigurasi Supervisor (queue worker)..."
+step "14. Supervisor - Queue Worker"
+
 cat > "/etc/supervisor/conf.d/server-pusat-queue.conf" <<SUPERVISOR
 [program:server-pusat-queue]
 command=php ${APP_DIR}/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
@@ -303,63 +431,72 @@ SUPERVISOR
 
 supervisorctl reread
 supervisorctl update
-supervisorctl start server-pusat-queue
-success "Queue worker berjalan."
+# Start jika belum running
+supervisorctl start server-pusat-queue 2>/dev/null || supervisorctl restart server-pusat-queue
+success "Queue worker berjalan: $(supervisorctl status server-pusat-queue | awk '{print $2}')"
 
 # =============================================================================
-# 15. Konfigurasi Cron untuk Scheduler
+# 15. Cron - Laravel Scheduler
 # =============================================================================
-info "Mengkonfigurasi cron job Laravel Scheduler..."
-CRON_JOB="* * * * * www-data php ${APP_DIR}/artisan schedule:run >> /dev/null 2>&1"
-CRON_FILE="/etc/cron.d/server-pusat"
-echo "$CRON_JOB" > "$CRON_FILE"
-chmod 644 "$CRON_FILE"
+step "15. Cron - Laravel Scheduler"
+
+echo "* * * * * www-data php ${APP_DIR}/artisan schedule:run >> /dev/null 2>&1" \
+    > /etc/cron.d/server-pusat
+chmod 644 /etc/cron.d/server-pusat
 success "Cron job dikonfigurasi."
 
 # =============================================================================
-# 16. Konfigurasi firewall (UFW)
+# 16. Firewall (UFW) - opsional
 # =============================================================================
-info "Mengkonfigurasi firewall..."
-if command -v ufw &> /dev/null; then
+step "16. Firewall"
+
+if command -v ufw &>/dev/null; then
     ufw allow OpenSSH > /dev/null 2>&1
     ufw allow 'Nginx Full' > /dev/null 2>&1
     ufw --force enable > /dev/null 2>&1
-    success "Firewall dikonfigurasi (SSH + HTTP/HTTPS diizinkan)."
+    success "Firewall aktif (SSH + HTTP/HTTPS dibuka)."
 else
-    warn "UFW tidak ditemukan, lewati konfigurasi firewall."
+    warn "UFW tidak ditemukan - konfigurasi firewall manual jika perlu."
 fi
 
 # =============================================================================
-# SELESAI - Tampilkan ringkasan
+# SELESAI
 # =============================================================================
+
+# Baca DB_PASS dari .env untuk ditampilkan (mungkin berbeda jika .env sudah ada)
+DISPLAY_DB_PASS=$(grep "^DB_PASSWORD=" "${APP_DIR}/.env" | cut -d= -f2)
+DISPLAY_DEV_EMAIL=$(grep "^DEV_EMAIL=" "${APP_DIR}/.env" | cut -d= -f2)
+DISPLAY_DEV_PASS=$(grep "^DEV_PASSWORD=" "${APP_DIR}/.env" | cut -d= -f2)
+
 echo ""
 echo "============================================================"
 echo -e "  ${GREEN}INSTALASI SELESAI!${NC}"
 echo "============================================================"
 echo ""
-echo "  Aplikasi  : http://${APP_DOMAIN}"
+echo "  Akses     : http://${APP_DOMAIN}"
 echo "  Direktori : ${APP_DIR}"
 echo ""
-echo "  --- Akun Developer ---"
-echo "  Email    : ${DEV_EMAIL}"
-echo "  Password : ${DEV_PASS}"
+echo "  --- Login Dashboard ---"
+echo "  Email    : ${DISPLAY_DEV_EMAIL}"
+echo "  Password : ${DISPLAY_DEV_PASS}"
 echo ""
 echo "  --- Database PostgreSQL ---"
 echo "  Database : ${DB_NAME}"
 echo "  Username : ${DB_USER}"
-echo "  Password : ${DB_PASS}"
+echo "  Password : ${DISPLAY_DB_PASS}"
 echo ""
-echo "  SIMPAN INFORMASI DI ATAS DI TEMPAT YANG AMAN!"
+echo -e "  ${RED}SIMPAN INFO DI ATAS DI TEMPAT AMAN!${NC}"
 echo ""
-echo "  --- Langkah selanjutnya ---"
-echo "  1. Arahkan domain '${APP_DOMAIN}' ke IP VPS ini"
-echo "  2. Pasang SSL dengan: sudo certbot --nginx -d ${APP_DOMAIN}"
-echo "     (install certbot dulu: sudo apt install certbot python3-certbot-nginx)"
-echo "  3. Buka http://${APP_DOMAIN} dan login"
+echo "  --- Langkah selanjutnya (opsional) ---"
+echo "  1. Pasang SSL gratis:"
+echo "     apt install certbot python3-certbot-nginx"
+echo "     certbot --nginx -d ${APP_DOMAIN}"
+echo ""
+echo "  2. Isi data demo (10 sekolah + 30 hari heartbeat):"
+echo "     cd ${APP_DIR} && php artisan db:seed --class=DemoSeeder --force"
 echo ""
 echo "  --- Perintah berguna ---"
-echo "  sudo supervisorctl status              # cek queue worker"
-echo "  sudo supervisorctl restart server-pusat-queue"
-echo "  sudo tail -f ${APP_DIR}/storage/logs/laravel.log"
+echo "  supervisorctl status                          # cek queue worker"
+echo "  tail -f ${APP_DIR}/storage/logs/laravel.log   # log aplikasi"
 echo "  cd ${APP_DIR} && php artisan heartbeat:bersihkan-log"
 echo ""
