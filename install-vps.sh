@@ -27,7 +27,7 @@ step()    { echo -e "\n${CYAN}======== $1 ========${NC}"; }
 # KONFIGURASI - Diisi via input interaktif saat script dijalankan
 # =============================================================================
 
-PHP_VERSION="8.3"
+PHP_VERSION="8.4"
 DB_NAME="absensi_monitor"
 DB_USER="absensi_user"
 DB_PASS="$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)"
