@@ -374,12 +374,24 @@ composer install \
     2>&1 | tail -5
 success "Dependensi PHP selesai."
 
-info "npm install..."
-npm ci 2>&1 | tail -3
+# Jika assets sudah ada, skip npm install & build sama sekali
+if [ -f "${APP_DIR}/public/build/manifest.json" ]; then
+    success "Assets sudah ada (public/build/manifest.json), lewati npm install & build."
+else
+    info "npm install (registry: npmmirror)..."
+    # Pakai mirror yang lebih cepat dari npmjs.org
+    npm config set registry https://registry.npmmirror.com
+    npm config set fetch-timeout 120000
+    npm config set fetch-retries 2
 
-info "Build CSS/JS assets (Vite)..."
-npm run build 2>&1 | tail -5
-success "Assets berhasil dibuild."
+    timeout 300 npm ci 2>&1 | tail -5 || \
+    timeout 300 npm install 2>&1 | tail -5
+    success "npm install selesai."
+
+    info "Build CSS/JS assets (Vite)..."
+    timeout 120 npm run build 2>&1 | tail -5
+    success "Assets berhasil dibuild."
+fi
 
 # Fix permission setelah install sebagai root
 chown -R www-data:www-data "$APP_DIR/vendor" "$APP_DIR/node_modules" 2>/dev/null || true
