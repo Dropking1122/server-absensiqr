@@ -90,8 +90,8 @@ apt-get update -qq
 apt-get install -y -qq \
     curl wget git unzip gnupg2 \
     apt-transport-https ca-certificates lsb-release \
-    software-properties-common
-success "Paket dasar terinstall."
+    software-properties-common tmux
+success "Paket dasar terinstall (termasuk tmux)."
 
 # =============================================================================
 # 2. Install PHP
