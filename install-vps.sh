@@ -239,13 +239,20 @@ fi
 # =============================================================================
 step "6. Install Composer"
 
+# Matikan cek update otomatis Composer (penyebab hang)
+export COMPOSER_NO_INTERACTION=1
+export COMPOSER_DISABLE_XDEBUG_WARN=1
+export COMPOSER_ALLOW_SUPERUSER=1
+export COMPOSER_HOME=/root/.composer
+
 if command -v composer &>/dev/null; then
-    success "Composer sudah ada: $(composer --version --no-ansi 2>/dev/null | head -1)"
+    COMPOSER_VER=$(timeout 5 composer --version --no-ansi --no-interaction 2>/dev/null | head -1 || echo "terinstall")
+    success "Composer sudah ada: ${COMPOSER_VER}"
 else
     # Coba via apt (pakai mirror lokal, timeout 90 detik)
     info "Menginstall Composer via apt..."
     if timeout 90 apt-get install -y composer 2>/dev/null && command -v composer &>/dev/null; then
-        info "Composer dari apt terinstall, cek versi..."
+        info "Composer dari apt terinstall."
     else
         # Fallback: download .phar dari GitHub Releases (bukan getcomposer.org)
         warn "apt gagal atau timeout, download dari GitHub Releases..."
@@ -256,13 +263,14 @@ else
     fi
 
     # Pastikan versi 2.x
-    COMPOSER_MAJOR=$(composer --version --no-ansi 2>/dev/null | grep -oP '\d+' | head -1)
+    COMPOSER_MAJOR=$(timeout 5 composer --version --no-ansi --no-interaction 2>/dev/null | grep -oP '\d+' | head -1 || echo "2")
     if [ "${COMPOSER_MAJOR:-0}" -lt 2 ]; then
         info "Upgrade Composer ke versi 2..."
-        composer self-update --2 --quiet 2>/dev/null || true
+        timeout 30 composer self-update --2 --quiet --no-interaction 2>/dev/null || true
     fi
 
-    success "Composer terinstall: $(composer --version --no-ansi 2>/dev/null | head -1)"
+    COMPOSER_VER=$(timeout 5 composer --version --no-ansi --no-interaction 2>/dev/null | head -1 || echo "terinstall")
+    success "Composer ${COMPOSER_VER}"
 fi
 
 # =============================================================================
