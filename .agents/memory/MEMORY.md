@@ -1,0 +1,1 @@
+- [Laravel Server Pusat Setup](laravel-server-pusat.md) - Laravel 13 app di Replit: DB host=helium (bukan localhost), password=env var, Tailwind safelist wajib untuk dynamic classes.
