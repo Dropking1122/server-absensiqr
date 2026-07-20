@@ -243,7 +243,7 @@ echo "* * * * * www-data php /var/www/absensi/artisan schedule:run >> /dev/null 
 ## 7. Tampilan Pengumuman di UI
 
 Data pengumuman sudah tersimpan di `installation_statuses`. Tampilkan sebagai
-**banner** di layout utama agar muncul di semua halaman.
+kartu notifikasi di bagian atas halaman utama agar muncul di semua halaman.
 
 ### Livewire Component: `BannerPengumuman`
 
@@ -264,74 +264,124 @@ class BannerPengumuman extends Component
 
 ```blade
 @if ($pengumuman)
-    @php
-        $warna = match($pengumuman->announcement_priority) {
-            'urgent'  => 'bg-red-600 text-white',
-            'warning' => 'bg-yellow-400 text-yellow-900',
-            default   => 'bg-blue-600 text-white',
-        };
-    @endphp
-    <div class="w-full px-4 py-2 text-sm text-center font-medium {{ $warna }}">
-        <span class="font-bold">{{ $pengumuman->announcement_title }}:</span>
-        {{ $pengumuman->announcement_message }}
-        @if ($pengumuman->announcement_until)
-            <span class="opacity-75 ml-2 text-xs">
-                s/d {{ $pengumuman->announcement_until->translatedFormat('d M Y H:i') }}
-            </span>
-        @endif
+@php
+    $configs = [
+        'urgent'  => ['bg' => 'bg-red-50',    'border' => 'border-red-200',   'text' => 'text-red-800',   'dot' => 'bg-red-500',    'label' => 'Mendesak'],
+        'warning' => ['bg' => 'bg-yellow-50',  'border' => 'border-yellow-200','text' => 'text-yellow-800','dot' => 'bg-yellow-400', 'label' => 'Peringatan'],
+        'info'    => ['bg' => 'bg-blue-50',    'border' => 'border-blue-200',  'text' => 'text-blue-800',  'dot' => 'bg-blue-500',   'label' => 'Info'],
+    ];
+    $c = $configs[$pengumuman->announcement_priority] ?? $configs['info'];
+@endphp
+<div class="mb-6 rounded-xl border {{ $c['border'] }} {{ $c['bg'] }} px-4 py-3 shadow-sm">
+    <div class="flex items-start gap-3">
+        <span class="mt-0.5 h-2 w-2 shrink-0 rounded-full {{ $c['dot'] }}"></span>
+        <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold {{ $c['text'] }}">
+                {{ $pengumuman->announcement_title }}
+            </p>
+            <p class="mt-0.5 text-sm {{ $c['text'] }} opacity-80">
+                {{ $pengumuman->announcement_message }}
+            </p>
+            @if ($pengumuman->announcement_until)
+            <p class="mt-1 text-xs {{ $c['text'] }} opacity-60">
+                Berlaku hingga {{ $pengumuman->announcement_until->setTimezone('Asia/Jakarta')->format('d M Y H:i') }} WIB
+            </p>
+            @endif
+        </div>
+        <span class="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium
+            {{ $c['bg'] }} {{ $c['text'] }} ring-1 ring-inset {{ $c['border'] }}">
+            {{ $c['label'] }}
+        </span>
     </div>
+</div>
 @endif
 ```
 
 ### Pasang di layout utama (`resources/views/layouts/app.blade.php`)
 
-```blade
-<body>
-    {{-- Banner pengumuman dari server pusat --}}
-    @livewire('banner-pengumuman')
+Letakkan di dalam `<main>`, **sebelum** `{{ $slot }}`, agar masuk dalam
+batasan `max-w-7xl` yang sama dengan konten halaman:
 
-    {{-- Navbar, konten, dll --}}
-    {{ $slot }}
-</body>
+```blade
+<main class="flex-1 py-8">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {{-- Pengumuman dari server pusat --}}
+        @livewire('banner-pengumuman')
+
+        {{ $slot }}
+    </div>
+</main>
 ```
 
 ---
 
 ## 8. Tampilan Notif Update di UI
 
-Tampilkan notifikasi jika ada versi baru tersedia.
-
-### Pasang di layout utama (setelah banner pengumuman)
-
-```blade
-@livewire('notif-update')
-```
-
 ### View: `resources/views/livewire/notif-update.blade.php`
 
 ```blade
 @php $status = \App\Models\InstallationStatus::sekarang(); @endphp
 @if ($status && $status->update_available)
-    <div class="mx-4 mt-3 rounded-lg border p-3 text-sm
-        {{ $status->update_mandatory ? 'bg-red-50 border-red-300 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800' }}">
-        <div class="flex items-start gap-2">
-            <span class="text-lg">{{ $status->update_mandatory ? '🚨' : '🆕' }}</span>
-            <div>
-                <p class="font-semibold">
-                    Versi {{ $status->latest_version }} tersedia
-                    @if($status->update_mandatory) — <span class="text-red-700">Update Wajib</span> @endif
-                </p>
-                @if($status->update_title)
-                    <p class="mt-0.5">{{ $status->update_title }}</p>
+@php
+    $wajib = $status->update_mandatory;
+@endphp
+<div class="mb-6 overflow-hidden rounded-xl border shadow-sm
+    {{ $wajib ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50' }}">
+    <div class="px-4 py-3">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 shrink-0">
+                @if ($wajib)
+                <svg class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                @else
+                <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                </svg>
                 @endif
-                <a href="{{ route('pengaturan.status-update') }}"
-                   class="mt-1 inline-block underline font-medium">
-                    Lihat detail →
-                </a>
             </div>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                    <p class="text-sm font-semibold {{ $wajib ? 'text-red-800' : 'text-blue-800' }}">
+                        Versi {{ $status->latest_version }} tersedia
+                    </p>
+                    @if ($wajib)
+                    <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                        Update Wajib
+                    </span>
+                    @endif
+                </div>
+                @if ($status->update_title)
+                <p class="mt-0.5 text-sm {{ $wajib ? 'text-red-700' : 'text-blue-700' }} opacity-80">
+                    {{ $status->update_title }}
+                </p>
+                @endif
+            </div>
+            <a href="{{ route('pengaturan.status-update') }}"
+               class="shrink-0 text-xs font-medium {{ $wajib ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900' }}">
+                Lihat detail
+            </a>
         </div>
     </div>
+</div>
 @endif
+```
+
+### Pasang di layout utama (setelah banner pengumuman)
+
+```blade
+<main class="flex-1 py-8">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {{-- Pengumuman dari server pusat --}}
+        @livewire('banner-pengumuman')
+
+        {{-- Notifikasi versi baru --}}
+        @livewire('notif-update')
+
+        {{ $slot }}
+    </div>
+</main>
 ```
 
 ---
