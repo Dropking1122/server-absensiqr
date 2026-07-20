@@ -1,0 +1,103 @@
+root@ubuntu:/var/www/sma_al_jihad# # Cek config update dan installation_id di .env
+cat /var/www/sma_al_jihad/config/update.php
+grep -i "installation_id\|INSTALLATION" /var/www/sma_al_jihad/.env
+<?php
+
+return [
+
+    /*
+    |--------------------------------------------------------------------------
+    | Versi Aplikasi
+    |--------------------------------------------------------------------------
+    |
+    | Versi saat ini dalam format SemVer (MAJOR.MINOR.PATCH).
+    | Diperbarui setiap rilis baru sebelum di-deploy ke VPS sekolah.
+    |
+    */
+    'version' => env('APP_VERSION', '1.0.0'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | ID Instalasi
+    |--------------------------------------------------------------------------
+    |
+    | Pengenal unik per instalasi VPS. Digenerate otomatis oleh start.sh
+    | saat pertama kali dijalankan dan TIDAK boleh diubah manual.
+    | Digunakan sebagai identitas sekolah di server monitoring pusat.
+    |
+    */
+    'installation_id' => env('INSTALLATION_ID', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Server Monitoring & Update
+    |--------------------------------------------------------------------------
+    |
+    | URL server pusat yang mengelola informasi rilis dan monitoring.
+    | Kosongkan jika belum terhubung ke server pusat.
+    |
+    */
+    'server_url' => env('UPDATE_SERVER_URL', ''),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Channel Update
+    |--------------------------------------------------------------------------
+    |
+    | Pilih antara 'stable' (direkomendasikan) atau 'beta'.
+    | Sekolah production sebaiknya tetap di 'stable'.
+    |
+    */
+    'channel' => env('UPDATE_CHANNEL', 'stable'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Interval Heartbeat (menit)
+    |--------------------------------------------------------------------------
+    |
+    | Seberapa sering aplikasi mengirim status online ke server pusat.
+    | Default 60 menit. Tidak disarankan kurang dari 30 menit.
+    |
+    */
+    'heartbeat_interval' => (int) env('HEARTBEAT_INTERVAL', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Interval Cek Update (jam)
+    |--------------------------------------------------------------------------
+    |
+    | Seberapa sering aplikasi mengecek versi terbaru ke server pusat.
+    | Default 24 jam (sekali sehari).
+    |
+    */
+    'check_interval' => (int) env('UPDATE_CHECK_INTERVAL', 24),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Aktifkan Monitoring
+    |--------------------------------------------------------------------------
+    |
+    | Set ke false untuk menonaktifkan seluruh komunikasi ke server pusat
+    | (heartbeat & cek update). Berguna jika sekolah tidak mengizinkan
+    | koneksi keluar, atau untuk instalasi offline penuh.
+    |
+    */
+    'enabled' => (bool) env('MONITORING_ENABLED', true),
+
+];
+INSTALLATION_ID=7ebdf6fc5c46265b415a2835d3e208e2
+root@ubuntu:/var/www/sma_al_jihad# cd /var/www/sma_al_jihad
+php artisan heartbeat:kirim --detail
+Payload heartbeat:
+  installation_id: 7ebdf6fc5c46265b415a2835d3e208e2
+  app_version: 1.0.0
+  app_name: SMA AL JIHAD
+  app_url: https://al-jihad.web.id
+  php_version: 8.3.32
+  db_driver: pgsql
+  wa_online: false
+  update_channel: stable
+  timestamp: 2026-07-20T13:23:09+07:00
+Mengirim heartbeat ke server pusat...
+✅ Heartbeat berhasil dikirim.
+root@ubuntu:/var/www/sma_al_jihad# 
