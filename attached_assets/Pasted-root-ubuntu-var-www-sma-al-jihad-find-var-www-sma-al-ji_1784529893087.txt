@@ -1,0 +1,42 @@
+root@ubuntu:/var/www/sma_al_jihad# find /var/www/sma_al_jihad/resources/views -name "*.blade.php" | head -30
+/var/www/sma_al_jihad/resources/views/siswa/cetak-qr-massal.blade.php
+/var/www/sma_al_jihad/resources/views/siswa/cetak-qr-bulk-pdf.blade.php
+/var/www/sma_al_jihad/resources/views/siswa/index.blade.php
+/var/www/sma_al_jihad/resources/views/siswa/cetak-qr.blade.php
+/var/www/sma_al_jihad/resources/views/siswa/cetak-qr-bulk-browser.blade.php
+/var/www/sma_al_jihad/resources/views/whatsapp/monitor.blade.php
+/var/www/sma_al_jihad/resources/views/log-aktivitas/index.blade.php
+/var/www/sma_al_jihad/resources/views/jadwal/pelajaran.blade.php
+/var/www/sma_al_jihad/resources/views/jadwal/index.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/notif-update.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/siswa/kartu-qr.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/siswa/form-siswa.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/siswa/tabel-siswa.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/activity-log/tabel-activity-log.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/jadwal/tabel-jadwal.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/jadwal/jadwal-pelajaran.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/jadwal/form-jadwal.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pengguna/form-pengguna.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pengguna/tabel-pengguna.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/master-mapel/tabel-master-mapel.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pages/auth/reset-password.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pages/auth/confirm-password.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pages/auth/forgot-password.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pages/auth/verify-email.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pages/auth/login.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/mapel/tabel-mapel.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/mapel/form-mapel.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/peraturan/tabel-peraturan.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/status-service.blade.php
+/var/www/sma_al_jihad/resources/views/livewire/pengaturan/form-pengaturan-monitor.blade.php
+root@ubuntu:/var/www/sma_al_jihad# grep -n "announcement\|fillable\|casts" /var/www/sma_al_jihad/app/Models/InstallationStatus.php | head -20
+19:    protected $fillable = [
+29:        'announcement_title',
+30:        'announcement_message',
+31:        'announcement_priority',
+32:        'announcement_until',
+37:    protected $casts = [
+43:        'announcement_until'          => 'datetime',
+82:        return !empty($this->announcement_message)
+83:            && ($this->announcement_until === null || $this->announcement_until->isFuture());
+root@ubuntu:/var/www/sma_al_jihad# 
