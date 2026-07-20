@@ -1,0 +1,115 @@
+root@ubuntu:/var/www/sma_al_jihad# cat /var/www/sma_al_jihad/resources/views/livewire/notif-update.blade.php
+<div>
+    {{-- ── Banner Update Tersedia ────────────────────────────────────────────
+         Muncul hanya untuk Admin, hanya jika ada versi baru dari server pusat.
+         Mandatory = tidak bisa di-dismiss.
+    ──────────────────────────────────────────────────────────────────────── --}}
+    @if($adaUpdate && !$tutupUpdate && auth()->check() && auth()->user()->isAdmin())
+        <div @if(!$updateMandatory) x-data="{ visible: true }" x-show="visible" x-cloak @endif
+             class="{{ $updateMandatory
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-amber-50 border-b border-amber-200 text-amber-900' }}
+                    flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+
+            <div class="flex items-center gap-2.5 min-w-0">
+                {{-- Icon --}}
+                <div class="flex-shrink-0 {{ $updateMandatory ? 'text-white' : 'text-amber-600' }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </div>
+
+                {{-- Teks --}}
+                <span class="min-w-0">
+                    @if($updateMandatory)
+                        <span class="font-bold">Pembaruan Wajib tersedia — v{{ $latestVersion }}.</span>
+                        Segera perbarui aplikasi untuk melanjutkan penggunaan.
+                    @else
+                        <span class="font-semibold">Pembaruan tersedia — v{{ $latestVersion }}.</span>
+                        @if($releaseTitle)
+                            <span class="text-amber-700">{{ $releaseTitle }}</span>
+                        @endif
+                        <a href="{{ route('pengaturan.tentang') }}" wire:navigate
+                           class="underline font-medium ml-1 hover:text-amber-800">
+                            Lihat detail
+                        </a>
+                    @endif
+                </span>
+            </div>
+
+            {{-- Tombol tutup (hanya untuk non-mandatory) --}}
+            @if(!$updateMandatory)
+                <button wire:click="tutupUpdate"
+                        @if(!$updateMandatory) @click="visible = false" @endif
+                        class="flex-shrink-0 p-1 rounded hover:bg-amber-100 text-amber-500 hover:text-amber-700 transition-colors"
+                        title="Tutup notifikasi ini">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            @endif
+        </div>
+    @endif
+
+    {{-- ── Banner Pengumuman dari Server Pusat ───────────────────────────────
+         Muncul untuk semua peran jika ada pengumuman aktif.
+         Priority: info (biru) | warning (kuning) | urgent (merah)
+    ──────────────────────────────────────────────────────────────────────── --}}
+    @if($adaPengumuman && !$tutupPengumuman && auth()->check())
+        @php
+            $warna = match($pengumumanPrioritas) {
+                'urgent'  => 'bg-red-600 text-white',
+                'warning' => 'bg-amber-100 border-b border-amber-300 text-amber-900',
+                default   => 'bg-blue-50 border-b border-blue-200 text-blue-900',
+            };
+            $warnaIkon = match($pengumumanPrioritas) {
+                'urgent'  => 'text-white',
+                'warning' => 'text-amber-600',
+                default   => 'text-blue-500',
+            };
+            $warnaTutup = match($pengumumanPrioritas) {
+                'urgent'  => 'hover:bg-red-500 text-red-200 hover:text-white',
+                'warning' => 'hover:bg-amber-200 text-amber-500 hover:text-amber-800',
+                default   => 'hover:bg-blue-100 text-blue-400 hover:text-blue-700',
+            };
+        @endphp
+        <div x-data="{ visible: true }" x-show="visible" x-cloak
+             class="{{ $warna }} flex items-start sm:items-center justify-between gap-3 px-4 py-2.5 text-sm">
+
+            <div class="flex items-start sm:items-center gap-2.5 min-w-0">
+                {{-- Icon --}}
+                <div class="flex-shrink-0 mt-0.5 sm:mt-0 {{ $warnaIkon }}">
+                    @if($pengumumanPrioritas === 'urgent')
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                    @else
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
+                        </svg>
+                    @endif
+                </div>
+
+                {{-- Teks --}}
+                <span class="min-w-0">
+                    @if($pengumumanJudul)
+                        <span class="font-semibold">{{ $pengumumanJudul }}:</span>
+                    @endif
+                    {{ $pengumumanPesan }}
+                </span>
+            </div>
+
+            {{-- Tombol tutup --}}
+            <button wire:click="tutupPengumuman"
+                    @click="visible = false"
+                    class="flex-shrink-0 p-1 rounded transition-colors {{ $warnaTutup }}"
+                    title="Tutup pengumuman">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    @endif
+</div>
+root@ubuntu:/var/www/sma_al_jihad# 
