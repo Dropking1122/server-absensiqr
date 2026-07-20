@@ -1,0 +1,28 @@
+root@ubuntu:/var/www/sma_al_jihad# grep -rn "heartbeat\|UPDATE_SERVER_URL\|app_version\|installation_id" /var/www/sma_al_jihad/app --include="*.php" | grep -v ".git"
+/var/www/sma_al_jihad/app/Console/Commands/AmbilChangelog.php:23:            $this->line('UPDATE_SERVER_URL belum dikonfigurasi. Changelog dilewati.');
+/var/www/sma_al_jihad/app/Console/Commands/CekUpdate.php:22:            $this->line('<fg=gray>UPDATE_SERVER_URL belum dikonfigurasi. Cek update dilewati.</> '
+/var/www/sma_al_jihad/app/Console/Commands/CekUpdate.php:23:                . '<fg=yellow>Atur UPDATE_SERVER_URL di .env untuk mengaktifkan notifikasi update.</>');
+/var/www/sma_al_jihad/app/Console/Commands/KirimHeartbeat.php:10:    protected $signature   = 'heartbeat:kirim {--detail : Tampilkan payload yang dikirim}';
+/var/www/sma_al_jihad/app/Console/Commands/KirimHeartbeat.php:21:            $this->line('<fg=gray>UPDATE_SERVER_URL belum dikonfigurasi. Heartbeat dilewati.</> '
+/var/www/sma_al_jihad/app/Console/Commands/KirimHeartbeat.php:22:                . '<fg=yellow>Atur UPDATE_SERVER_URL di .env untuk mengaktifkan monitoring.</>');
+/var/www/sma_al_jihad/app/Console/Commands/KirimHeartbeat.php:28:            $this->line('<fg=cyan>Payload heartbeat:</>');
+/var/www/sma_al_jihad/app/Console/Commands/KirimHeartbeat.php:35:        $this->line('Mengirim heartbeat ke server pusat...');
+/var/www/sma_al_jihad/app/Livewire/Pengaturan/ChangelogSection.php:36:            $this->pesanAmbil    = 'UPDATE_SERVER_URL belum dikonfigurasi.';
+/var/www/sma_al_jihad/app/Livewire/Pengaturan/StatusUpdate.php:48:            $this->pesanCek    = 'UPDATE_SERVER_URL belum dikonfigurasi di .env.';
+/var/www/sma_al_jihad/app/Services/UpdateService.php:25:        $this->installationId = config('update.installation_id', '');
+/var/www/sma_al_jihad/app/Services/UpdateService.php:58:     * Susun payload heartbeat — hanya data teknis, tanpa data siswa/guru/absensi.
+/var/www/sma_al_jihad/app/Services/UpdateService.php:63:            'installation_id' => $this->installationId,
+/var/www/sma_al_jihad/app/Services/UpdateService.php:64:            'app_version'     => $this->appVersion,
+/var/www/sma_al_jihad/app/Services/UpdateService.php:76:     * Kirim heartbeat ke server pusat./var/www/sma_al_jihad/app/Services/UpdateService.php:82:        // Selalu catat installation_id di tabel lokal
+/var/www/sma_al_jihad/app/Services/UpdateService.php:84:            'installation_id' => $this->installationId,
+/var/www/sma_al_jihad/app/Services/UpdateService.php:99:                ->post("{$this->serverUrl}/api/heartbeat", $payload);
+/var/www/sma_al_jihad/app/Services/UpdateService.php:102:                InstallationStatus::catat(['last_heartbeat_sent_at' => now()]);
+/var/www/sma_al_jihad/app/Services/UpdateService.php:114:            InstallationStatus::catat(['last_heartbeat_failed_at' => now()]);
+/var/www/sma_al_jihad/app/Services/UpdateService.php:121:            InstallationStatus::catat(['last_heartbeat_failed_at' => now()]);
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:20:        'installation_id',
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:33:        'last_heartbeat_sent_at',
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:34:        'last_heartbeat_failed_at',
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:44:        'last_heartbeat_sent_at'      => 'datetime',
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:45:        'last_heartbeat_failed_at'    => 'datetime',
+/var/www/sma_al_jihad/app/Models/InstallationStatus.php:55:            ['installation_id' => config('update.installation_id', '')]
+root@ubuntu:/var/www/sma_al_jihad# 
