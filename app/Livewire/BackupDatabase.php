@@ -56,6 +56,7 @@ class BackupDatabase extends Component
 
     public function render()
     {
-        return view('livewire.backup-database');
+        return view('livewire.backup-database')
+            ->layout('layouts.app', ['header' => 'Backup & Restore Database', 'title' => 'Backup DB']);
     }
 }
