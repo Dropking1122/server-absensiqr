@@ -14,15 +14,30 @@ Route::get('/developer-info', function () {
     $developer = $data['developer'] ?? config('monitor.developer', 'REVDSTORE');
     $github    = $data['github']    ?? config('monitor.github', 'https://github.com/Dropking1122');
     $email     = $data['email']     ?? config('monitor.email', 'dropking1122@gmail.com');
+    $wa        = $data['wa']        ?? '628123456789';
+    $instagram = $data['instagram'] ?? 'revdstore';
+    $telegram  = $data['telegram']  ?? 'revdstore';
     $copyright = $data['copyright'] ?? config('monitor.copyright', '© 2026 REVDSTORE. All Rights Reserved.');
 
+    $advisorNama = $data['advisor_nama']      ?? '';
+    $advisorWa   = $data['advisor_wa']        ?? '';
+    $advisorIg   = $data['advisor_instagram'] ?? '';
+    $advisorTg   = $data['advisor_telegram']  ?? '';
+
     return response()->json([
-        'status'         => 'ok',
-        'developer'      => $developer,
-        'github'         => $github,
-        'contact'        => $email,
-        'app_name'       => 'Absensi QR Sekolah',
-        'copyright'      => $copyright,
-        'signature_hash' => hash_hmac('sha256', $developer . '|' . $github, 'REVDSTORE_SECRET_KEY_2026'),
+        'status'            => 'ok',
+        'developer'         => $developer,
+        'github'            => $github,
+        'contact'           => $email,
+        'wa'                => $wa,
+        'instagram'         => $instagram,
+        'telegram'          => $telegram,
+        'advisor_nama'      => $advisorNama,
+        'advisor_wa'        => $advisorWa,
+        'advisor_instagram' => $advisorIg,
+        'advisor_telegram'  => $advisorTg,
+        'app_name'          => 'Absensi QR Sekolah',
+        'copyright'         => $copyright,
+        'signature_hash'    => hash_hmac('sha256', $developer . '|' . $github, 'REVDSTORE_SECRET_KEY_2026'),
     ]);
 });
