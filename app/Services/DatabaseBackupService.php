@@ -97,6 +97,13 @@ class DatabaseBackupService
             return ['sukses' => false, 'pesan' => 'File dump SQL kosong.'];
         }
 
+        // Bersihkan data lama terlebih dahulu agar id/unique constraint dari file dump tidak bentrok
+        try {
+            DB::statement('TRUNCATE TABLE installations, releases, announcements, heartbeat_logs RESTART IDENTITY CASCADE');
+        } catch (\Throwable $e) {
+            Log::warning('TRUNCATE sebelum restore dilewati: ' . $e->getMessage());
+        }
+
         // Gunakan psql CLI untuk eksekusi file dump pg_dump
         $command = sprintf(
             'PGPASSWORD=%s psql -h %s -p %d -U %s -d %s -f %s 2>&1',
@@ -114,7 +121,6 @@ class DatabaseBackupService
             // Fallback unprepared jika psql CLI melempar error non-critical
             try {
                 $content = file_get_contents($filePath);
-                // Clean metacommands bawaan psql sebelum unprepared
                 $cleanSql = preg_replace('/^\\\\.*/m', '', $content);
                 DB::unprepared($cleanSql);
                 return [
