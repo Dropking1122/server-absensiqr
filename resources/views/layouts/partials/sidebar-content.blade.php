@@ -18,6 +18,7 @@
                 ['route' => 'rilis.index',        'label' => 'Rilis',          'icon' => 'tag'],
                 ['route' => 'pengumuman.index',   'label' => 'Pengumuman',     'icon' => 'bell'],
                 ['route' => 'statistik',          'label' => 'Statistik',      'icon' => 'chart'],
+                ['route' => 'backup',             'label' => 'Backup DB',      'icon' => 'database'],
             ];
         @endphp
 
@@ -47,6 +48,10 @@
                 @elseif($item['icon'] === 'chart')
                 <svg class="h-5 w-5 shrink-0 {{ $active ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                </svg>
+                @elseif($item['icon'] === 'database')
+                <svg class="h-5 w-5 shrink-0 {{ $active ? 'text-indigo-600' : 'text-gray-400 group-hover:text-gray-600' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
                 </svg>
                 @endif
                 {{ $item['label'] }}
