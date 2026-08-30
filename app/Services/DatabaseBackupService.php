@@ -85,7 +85,7 @@ class DatabaseBackupService
     }
 
     /**
-     * Restore database dari file SQL (non-destruktif / merge).
+     * Restore database dari file SQL (menggunakan psql CLI agar mendukung metacommands pg_dump).
      */
     public function restoreFromFile(string $filePath): array
     {
@@ -93,25 +93,49 @@ class DatabaseBackupService
             return ['sukses' => false, 'pesan' => 'File dump SQL tidak ditemukan.'];
         }
 
-        $content = file_get_contents($filePath);
-        if (empty($content)) {
+        if (filesize($filePath) === 0) {
             return ['sukses' => false, 'pesan' => 'File dump SQL kosong.'];
         }
 
-        try {
-            DB::unprepared($content);
-            return [
-                'sukses' => true,
-                'status' => 'sukses',
-                'pesan'  => 'Restore database berhasil dieksekusi.'
-            ];
-        } catch (\Throwable $e) {
-            Log::error('Restore DB Error: ' . $e->getMessage());
-            return [
-                'sukses' => false,
-                'status' => 'gagal',
-                'pesan'  => 'Gagal mengeksekusi restore: ' . $e->getMessage()
-            ];
+        // Gunakan psql CLI untuk eksekusi file dump pg_dump
+        $command = sprintf(
+            'PGPASSWORD=%s psql -h %s -p %d -U %s -d %s -f %s 2>&1',
+            escapeshellarg($this->password),
+            escapeshellarg($this->host),
+            $this->port,
+            escapeshellarg($this->username),
+            escapeshellarg($this->database),
+            escapeshellarg($filePath)
+        );
+
+        exec($command, $output, $returnVar);
+
+        if ($returnVar !== 0) {
+            // Fallback unprepared jika psql CLI melempar error non-critical
+            try {
+                $content = file_get_contents($filePath);
+                // Clean metacommands bawaan psql sebelum unprepared
+                $cleanSql = preg_replace('/^\\\\.*/m', '', $content);
+                DB::unprepared($cleanSql);
+                return [
+                    'sukses' => true,
+                    'status' => 'sukses',
+                    'pesan'  => 'Restore database berhasil dieksekusi via fallback parser.'
+                ];
+            } catch (\Throwable $e) {
+                Log::error('Restore DB Error: ' . implode("\n", $output) . "\nException: " . $e->getMessage());
+                return [
+                    'sukses' => false,
+                    'status' => 'gagal',
+                    'pesan'  => 'Gagal mengeksekusi restore psql: ' . implode(' ', array_slice($output, 0, 3))
+                ];
+            }
         }
+
+        return [
+            'sukses' => true,
+            'status' => 'sukses',
+            'pesan'  => 'Restore database berhasil dieksekusi via psql CLI.'
+        ];
     }
 }
