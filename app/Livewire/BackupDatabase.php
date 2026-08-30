@@ -15,6 +15,7 @@ class BackupDatabase extends Component
     public $fileSql      = null;
     public ?string $pesan     = null;
     public string  $tipePesan = 'sukses';
+    public ?array  $logRestore = null;
 
     public function downloadBackupSql(DatabaseBackupService $service): ?BinaryFileResponse
     {
@@ -42,15 +43,25 @@ class BackupDatabase extends Component
         ]);
 
         $path = $this->fileSql->getRealPath();
+        $startTime = microtime(true);
         $hasil = $service->restoreFromFile($path);
+        $duration = round(microtime(true) - $startTime, 2);
 
         if ($hasil['sukses']) {
-            $this->pesan     = 'Restore database berhasil dieksekusi.';
-            $this->tipePesan = 'sukses';
-            $this->fileSql   = null;
+            $this->pesan      = 'Restore database berhasil dieksekusi.';
+            $this->tipePesan  = 'sukses';
+            $this->logRestore = [
+                'waktu'    => date('d M Y H:i:s'),
+                'durasi'   => $duration . ' detik',
+                'file'     => $this->fileSql->getClientOriginalName(),
+                'status'   => 'Berhasil Dipulihkan',
+                'metode'   => $hasil['pesan'] ?? 'psql CLI',
+            ];
+            $this->fileSql    = null;
         } else {
-            $this->pesan     = 'Restore gagal: ' . ($hasil['pesan'] ?? 'Terjadi kesalahan.');
-            $this->tipePesan = 'error';
+            $this->pesan      = 'Restore gagal: ' . ($hasil['pesan'] ?? 'Terjadi kesalahan.');
+            $this->tipePesan  = 'error';
+            $this->logRestore = null;
         }
     }
 

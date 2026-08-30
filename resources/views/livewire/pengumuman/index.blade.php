@@ -84,8 +84,8 @@
                                     class="text-xs text-gray-500 hover:text-gray-700 font-medium">
                                     {{ $p->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                 </button>
-                                <button wire:click="hapus({{ $p->id }})" wire:confirm="Hapus pengumuman ini?"
-                                    class="text-xs text-red-500 hover:text-red-700 font-medium">Hapus</button>
+                                <button @click="if(confirm('Yakin ingin menghapus pengumuman ini secara permanen?')) { $wire.hapus({{ $p->id }}) }"
+                                        class="text-xs text-red-500 hover:text-red-700 font-medium">Hapus</button>
                             </div>
                         </td>
                     </tr>

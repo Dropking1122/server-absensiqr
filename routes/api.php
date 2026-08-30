@@ -8,13 +8,21 @@ Route::middleware('throttle:heartbeat')->post('/heartbeat', [HeartbeatController
 Route::get('/releases/latest', [ReleasesController::class, 'latest']);
 Route::get('/releases/changelog', [ReleasesController::class, 'changelog']);
 Route::get('/developer-info', function () {
+    $file = storage_path('app/developer_license.json');
+    $data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+
+    $developer = $data['developer'] ?? config('monitor.developer', 'REVDSTORE');
+    $github    = $data['github']    ?? config('monitor.github', 'https://github.com/Dropking1122');
+    $email     = $data['email']     ?? config('monitor.email', 'dropking1122@gmail.com');
+    $copyright = $data['copyright'] ?? config('monitor.copyright', '© 2026 REVDSTORE. All Rights Reserved.');
+
     return response()->json([
         'status'         => 'ok',
-        'developer'      => 'REVDSTORE',
-        'github'         => 'https://github.com/Dropking1122',
-        'contact'        => 'dropking1122@gmail.com',
+        'developer'      => $developer,
+        'github'         => $github,
+        'contact'        => $email,
         'app_name'       => 'Absensi QR Sekolah',
-        'copyright'      => '© 2026 REVDSTORE. All Rights Reserved.',
-        'signature_hash' => hash_hmac('sha256', 'REVDSTORE|https://github.com/Dropking1122', 'REVDSTORE_SECRET_KEY_2026'),
+        'copyright'      => $copyright,
+        'signature_hash' => hash_hmac('sha256', $developer . '|' . $github, 'REVDSTORE_SECRET_KEY_2026'),
     ]);
 });

@@ -24,6 +24,32 @@
         </div>
     @endif
 
+    @if($logRestore)
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-slate-100 space-y-3 shadow-md">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    Log Detail Hasil Restore Database
+                </span>
+                <span class="text-xs text-slate-400 font-mono">{{ $logRestore['waktu'] }}</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+                    <p class="text-slate-400">File Backup:</p>
+                    <p class="font-semibold text-slate-200 font-mono truncate mt-0.5">{{ $logRestore['file'] }}</p>
+                </div>
+                <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+                    <p class="text-slate-400">Durasi Proses:</p>
+                    <p class="font-semibold text-slate-200 mt-0.5">{{ $logRestore['durasi'] }}</p>
+                </div>
+                <div class="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+                    <p class="text-slate-400">Metode Eksekusi:</p>
+                    <p class="font-semibold text-emerald-400 mt-0.5">{{ $logRestore['metode'] }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Download Backup Card --}}
     <div class="overflow-hidden rounded-xl bg-white border border-gray-200 shadow-sm p-6">
         <div class="flex items-start gap-4">

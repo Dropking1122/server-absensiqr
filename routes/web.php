@@ -14,6 +14,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pengumuman', \App\Livewire\Pengumuman\Index::class)->name('pengumuman.index');
     Route::get('/statistik', \App\Livewire\Statistik::class)->name('statistik');
     Route::get('/backup', \App\Livewire\BackupDatabase::class)->name('backup');
+    Route::get('/lisensi', \App\Livewire\PengaturanLisensi::class)->name('lisensi');
+    Route::get('/profile', function () {
+        return view('profile');
+    })->name('profile');
 });
 
 require __DIR__.'/auth.php';
