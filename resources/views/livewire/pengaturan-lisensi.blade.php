@@ -26,6 +26,25 @@
             <div class="space-y-4">
                 <h4 class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Informasi Developer Utama</h4>
 
+                {{-- Upload Logo Developer --}}
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider">Logo Developer (Upload PNG / SVG / JPG)</label>
+                    <div class="flex items-center gap-4">
+                        @if($developer_logo)
+                            <img src="{{ $developer_logo->temporaryUrl() }}" class="w-16 h-16 rounded-xl object-cover border border-indigo-200 shadow-sm" alt="Preview Logo">
+                        @elseif($existing_logo)
+                            <img src="{{ $existing_logo }}" class="w-16 h-16 rounded-xl object-cover border border-gray-200 shadow-sm" alt="Logo Developer">
+                        @else
+                            <div class="w-16 h-16 rounded-xl bg-gray-200 flex items-center justify-center text-xs text-gray-500 font-bold">No Logo</div>
+                        @endif
+                        <div class="flex-1">
+                            <input type="file" wire:model="developer_logo" accept="image/*" class="text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                            <p class="text-[11px] text-gray-400 mt-1">Format: PNG, JPG, WEBP, SVG (Maks. 2MB). Logo ini akan tampil di tentang aplikasi klien.</p>
+                            @error('developer_logo') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Nama Brand Developer <span class="text-red-500">*</span></label>

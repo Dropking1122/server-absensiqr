@@ -27,6 +27,7 @@ Route::get('/developer-info', function () {
     return response()->json([
         'status'            => 'ok',
         'developer'         => $developer,
+        'developer_logo'    => $data['developer_logo'] ?? '',
         'github'            => $github,
         'contact'           => $email,
         'wa'                => $wa,

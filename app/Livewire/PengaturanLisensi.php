@@ -3,9 +3,12 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class PengaturanLisensi extends Component
 {
+    use WithFileUploads;
+
     public string $developer        = '';
     public string $github           = '';
     public string $email            = '';
@@ -19,6 +22,10 @@ class PengaturanLisensi extends Component
     public string $advisor_wa        = '';
     public string $advisor_instagram = '';
     public string $advisor_telegram  = '';
+
+    // Developer Logo
+    public $developer_logo;
+    public ?string $existing_logo    = null;
 
     public ?string $pesan            = null;
 
@@ -39,6 +46,8 @@ class PengaturanLisensi extends Component
         $this->advisor_wa        = $data['advisor_wa']        ?? '';
         $this->advisor_instagram = $data['advisor_instagram'] ?? '';
         $this->advisor_telegram  = $data['advisor_telegram']  ?? '';
+
+        $this->existing_logo     = $data['developer_logo']    ?? null;
     }
 
     public function simpan(): void
@@ -55,7 +64,16 @@ class PengaturanLisensi extends Component
             'advisor_wa'        => 'nullable|string|max:20',
             'advisor_instagram' => 'nullable|string|max:60',
             'advisor_telegram'  => 'nullable|string|max:60',
+            'developer_logo'    => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048',
         ]);
+
+        $logoUrl = $this->existing_logo;
+        if ($this->developer_logo) {
+            $filename = 'developer_logo_' . time() . '.' . $this->developer_logo->getClientOriginalExtension();
+            $this->developer_logo->storeAs('brand', $filename, 'public');
+            $logoUrl = url('storage/brand/' . $filename);
+            $this->existing_logo = $logoUrl;
+        }
 
         $data = [
             'developer'         => $this->developer,
@@ -69,11 +87,12 @@ class PengaturanLisensi extends Component
             'advisor_wa'        => $this->advisor_wa,
             'advisor_instagram' => $this->advisor_instagram,
             'advisor_telegram'  => $this->advisor_telegram,
+            'developer_logo'    => $logoUrl,
         ];
 
         file_put_contents(storage_path('app/developer_license.json'), json_encode($data, JSON_PRETTY_PRINT));
 
-        $this->pesan = 'Pengaturan Lisensi Developer & Project Advisor berhasil disimpan dan disinkronkan ke seluruh VPS sekolah terhubung.';
+        $this->pesan = 'Pengaturan Lisensi & Logo Developer berhasil disimpan dan dipancarkan ke seluruh aplikasi klien.';
     }
 
     public function render()
