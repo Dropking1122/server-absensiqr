@@ -10,6 +10,7 @@ class PengaturanLisensi extends Component
     use WithFileUploads;
 
     public string $developer        = '';
+    public string $website          = '';
     public string $github           = '';
     public string $email            = '';
     public string $wa               = '';
@@ -35,6 +36,7 @@ class PengaturanLisensi extends Component
         $data = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
 
         $this->developer         = $data['developer']         ?? config('monitor.developer', 'REVDSTORE');
+        $this->website           = $data['website']           ?? 'https://revdstore.app';
         $this->github            = $data['github']            ?? config('monitor.github', 'https://github.com/Dropking1122');
         $this->email             = $data['email']             ?? config('monitor.email', 'dropking1122@gmail.com');
         $this->wa                = $data['wa']                ?? '628123456789';
@@ -54,6 +56,7 @@ class PengaturanLisensi extends Component
     {
         $this->validate([
             'developer'         => 'required|string|max:100',
+            'website'           => 'nullable|url|max:200',
             'github'            => 'required|url|max:200',
             'email'             => 'required|email|max:100',
             'wa'                => 'nullable|string|max:20',
@@ -77,6 +80,7 @@ class PengaturanLisensi extends Component
 
         $data = [
             'developer'         => $this->developer,
+            'website'           => $this->website,
             'github'            => $this->github,
             'email'             => $this->email,
             'wa'                => $this->wa,

@@ -61,11 +61,20 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Link GitHub / Repo Resmi <span class="text-red-500">*</span></label>
-                    <input type="url" wire:model="github" placeholder="https://github.com/Dropking1122"
-                           class="w-full rounded-xl border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
-                    @error('github') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Link Website Developer</label>
+                        <input type="url" wire:model="website" placeholder="https://revdstore.app"
+                               class="w-full rounded-xl border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        @error('website') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Link GitHub / Repo Resmi <span class="text-red-500">*</span></label>
+                        <input type="url" wire:model="github" placeholder="https://github.com/Dropking1122"
+                               class="w-full rounded-xl border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500" />
+                        @error('github') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">

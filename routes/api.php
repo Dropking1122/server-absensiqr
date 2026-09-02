@@ -28,6 +28,7 @@ Route::get('/developer-info', function () {
         'status'            => 'ok',
         'developer'         => $developer,
         'developer_logo'    => $data['developer_logo'] ?? '',
+        'website'           => $data['website'] ?? 'https://revdstore.app',
         'github'            => $github,
         'contact'           => $email,
         'wa'                => $wa,
